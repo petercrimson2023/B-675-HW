@@ -36,6 +36,9 @@ data %>% psych::describe()
 
 ```
 
+# Answer without using survival package
+
+## Question 1(a)
 
 ```{r}
 
@@ -58,22 +61,139 @@ data_sorted$cumulative_hazard = cumsum(data_sorted$lambda)
 
 cumulative_hazard = data_sorted %>% select(x,delta,y,lambda,cumulative_hazard) %>% filter(delta ==1) %>% select(cumulative_hazard)
 
-ppl_at_risk = data_sorted %>% select(x,delta,y,lambda,cumulative_hazard) %>% filter(delta ==1) %>% select(x,y)
+ppl_at_risk = data_sorted %>% select(x,delta,y,lambda,cumulative_hazard) %>% filter(delta >=1) %>% select(x,y)
 
 data2 = data.frame(time = ppl_at_risk$x, 
                     Y = ppl_at_risk$y,
-                   cumulative_hazard= cumulative_hazard)
+                   Nelson_Alan_Cumaltive= cumulative_hazard)
 
-Surv = exp(-cumulative_hazard)
+data2
+```
 
-Surv
+
+## Question 1(b)
+
+```{r}
+
+# Computing 95% confidence interval for the cumulative hazard assuming lambda(t) follows normal distribution
+
+
+V_estimate = (data_sorted$delta*(data_sorted$y-data_sorted$delta)/(data_sorted$y^3)) %>% cumsum()
+
+CI_upper = data_sorted$cumulative_hazard + qnorm(0.975)*sqrt(V_estimate)
+
+CI_lower = data_sorted$cumulative_hazard - qnorm(0.975)*sqrt(V_estimate)
+
+result_1_b = data_sorted %>% mutate(CI_upper = CI_upper, CI_lower = CI_lower)%>% 
+  filter(delta>=1) %>% 
+  select(x,cumulative_hazard,CI_upper,CI_lower) %>% 
+  round(.,6)
+
+result_1_b
+
+ggplot(result_1_b, aes(x = x)) +
+  geom_step(aes(y = cumulative_hazard), direction = "hv", col = "blue") +
+  geom_ribbon(aes(ymin = CI_lower, ymax = CI_upper), alpha = 0.2) +
+  labs(x = "Time", y = "Cumulative HAzard Nelson Alaan") +
+  ggtitle("Nelson Alaan estimator with 95% Confidence Intervals") +
+  theme_minimal()
+
+
 
 ```
 
 
+## Question 1(c)
+
+```{r}
 
 
+# Computing 95% confidence interval for the cumulative hazard assuming log(lambda(t)) follows normal distribution
 
+# Computing using delta mathod
+
+V_estimate_temp = (data_sorted$delta*(data_sorted$y-data_sorted$delta)/(data_sorted$y^3)) %>% cumsum()
+
+V_estimate = V_estimate_temp / (data_sorted$cumulative_hazard^2)
+
+CI_upper = data_sorted$cumulative_hazard * exp(qnorm(0.975)*sqrt(V_estimate))
+
+CI_lower = data_sorted$cumulative_hazard * exp(-qnorm(0.975)*sqrt(V_estimate))
+
+result_1_c = data_sorted %>% 
+  mutate(CI_upper = CI_upper, CI_lower = CI_lower)%>% 
+  filter(delta>=1) %>% 
+  select(x,cumulative_hazard,CI_upper,CI_lower) %>% 
+  round(.,6)
+
+result_1_c
+
+ggplot(result_1_c, aes(x = x)) +
+  geom_step(aes(y = cumulative_hazard), direction = "hv", col = "blue") +
+  geom_ribbon(aes(ymin = CI_lower, ymax = CI_upper), alpha = 0.2) +
+  labs(x = "Time", y = "Cumulative HAzard Nelson Alaan") +
+  ggtitle("Nelson Alaan estimator with 95% Confidence Intervals") +
+  theme_minimal()
+
+
+```
+
+## Question 1(d)
+
+$S(t)=exp(-\Lambda(t)) $
+
+$\hat{V}(\hat{S}(t))=exp(-2\hat{\Lambda}(t))\hat{V}(\hat{\Lambda}(t)) $
+
+
+```{r}
+
+#Estimate S(t) using the Nelson-Aalen procedure, then compute 95% confidence intervals 
+#for and assuming that log{ ̂ Λ(t)} follows a Normal  
+
+V_estimate_temp = (data_sorted$delta*(data_sorted$y-data_sorted$delta)/(data_sorted$y^3)) %>% cumsum()
+
+V_estimate = V_estimate_temp / (data_sorted$cumulative_hazard^2)
+
+S_estimate = exp(-data_sorted$cumulative_hazard)
+
+CI_lower = exp(-data_sorted$cumulative_hazard * exp(qnorm(0.975)*sqrt(V_estimate))) 
+
+CI_upper = exp(-data_sorted$cumulative_hazard * exp(-qnorm(0.975)*sqrt(V_estimate))) 
+
+result_1_d = data_sorted %>% 
+  mutate(CI_upper = CI_upper, CI_lower = CI_lower,S_estimate=S_estimate)%>% 
+  filter(delta>=1) %>% 
+  select(x,CI_upper,S_estimate,CI_lower) %>%
+  round(.,6)
+
+result_1_d
+
+# plotting the survival function and its confidence interval from result_1_d as step function
+
+ggplot(result_1_d, aes(x = x)) +
+  geom_step(aes(y = S_estimate), direction = "hv", col = "blue") +
+  geom_ribbon(aes(ymin = CI_lower, ymax = CI_upper), alpha = 0.2) +
+  labs(x = "Time", y = "Survival Probability") +
+  ggtitle("Survival Function with 95% Confidence Intervals") +
+  theme_minimal()
+
+
+```
+
+## Question 1(e)
+
+```{r}
+
+print("quartiles of 0.25,0.5 of survival estimations are")
+
+c(min(result_1_d$x[which(result_1_d$S_estimate <= (1-0.25))]),
+min(result_1_d$x[which(result_1_d$S_estimate <= 0.5)]))
+#min(result_1_d$x[which(result_1_d$S_estimate <= 0.25)]))
+
+```
+
+
+# Answering with package survival
 
 ## Question 1.(a)
 
@@ -163,7 +283,9 @@ plot(nelson_aalen_fit, cumhaz=TRUE, xlab = "Time", ylab = "Cumulative Hazard", m
 
 obj = Surv(data$x, data$delta)
 nelson_aalen_survival = survfit(obj ~ 1,type="fh",conf.type="log-log")
-nelson_aalen_survival %>% summary()
+reuslt = nelson_aalen_survival %>% summary() 
+
+result[c("time","upper","surv","lower")] %>% as.data.frame() %>% round(.,6)
 
 # plotting the survival function
 
