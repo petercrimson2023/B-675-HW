@@ -101,7 +101,7 @@ plot(nelson_aalen_fit, cumhaz=TRUE, xlab = "Time", ylab = "Cumulative Hazard", m
 
 obj = Surv(data$x, data$delta)
 nelson_aalen_survival = survfit(obj ~ 1,type="fh",conf.type="log-log")
-reuslt = nelson_aalen_survival %>% summary() 
+result = nelson_aalen_survival %>% summary() 
 
 result[c("time","upper","surv","lower")] %>% as.data.frame() %>% round(.,6)
 
