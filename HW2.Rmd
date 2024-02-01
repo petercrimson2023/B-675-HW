@@ -3,7 +3,8 @@ title: "HW2"
 author: "Bulun Te"
 date: "2024-01-26"
 output:
-  pdf_document: default
+  pdf_document: 
+    latex_engine: xelatex
   html_document: default
 ---
 
@@ -11,11 +12,12 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r,echo=TRUE}
+```{r,echo=TRUE,message=FALSE}
 library(dplyr)
 library(survival)
 library(kableExtra)
 library(knitr)
+library(ggplot2)
 
 # Reading the data
 
@@ -40,11 +42,14 @@ data %>% psych::describe()
 
 ## Question 1(a)
 
+$\hat{\Lambda}_{NA}(t)=\sum_{t_j < t} \frac{D_j}{Y_j}$
+
+where $D_j$ is the number of events at time $t_j$ and 
+$Y_j$ is the number of individuals at risk at time $t_j$.
+
+
+
 ```{r}
-
-#data
-
-#data$not_censored_x = as.numeric(data$x * data$delta>0)
 
 
 # sort data with x column with aescending order
@@ -59,9 +64,14 @@ data_sorted$lambda = data_sorted$delta / data_sorted$y
 
 data_sorted$cumulative_hazard = cumsum(data_sorted$lambda)
 
-cumulative_hazard = data_sorted %>% select(x,delta,y,lambda,cumulative_hazard) %>% filter(delta ==1) %>% select(cumulative_hazard)
+cumulative_hazard = data_sorted %>% 
+  select(x,delta,y,lambda,cumulative_hazard) %>% 
+  filter(delta ==1) %>% 
+  select(cumulative_hazard)
 
-ppl_at_risk = data_sorted %>% select(x,delta,y,lambda,cumulative_hazard) %>% filter(delta >=1) %>% select(x,y)
+ppl_at_risk = data_sorted %>% 
+  select(x,delta,y,lambda,cumulative_hazard) %>% 
+  filter(delta >=1) %>% select(x,y)
 
 data2 = data.frame(time = ppl_at_risk$x, 
                     Y = ppl_at_risk$y,
@@ -72,6 +82,10 @@ data2
 
 
 ## Question 1(b)
+
+Assuming the $\hat{\Lambda} (t)$ follows normal distribution, and the variance of $\hat{\Lambda}(t)$ is estimated using Greenwood's formula as $\hat{V}(t)=\sum_{t_j<t}\frac{D_j(Y_j-D_j)}{Y_j^3}$, then the confidence interval is estimated as $\hat{\Lambda}(t) \pm z_{0.975}\sqrt{\hat{V}(t)}$.
+
+
 
 ```{r}
 
@@ -105,10 +119,13 @@ ggplot(result_1_b, aes(x = x)) +
 
 ## Question 1(c)
 
+Assuming the $\hat{\Lambda} (t)$ follows normal distribution.  The variance of $\hat{\Lambda (t)}$ , using Delta method is estimated as $\hat{V}(\log(\hat{\Lambda} (t)) = \sum_{t_j<t}\frac{D_j(Y_j-D_j)}{Y_j^3 \hat{\Lambda}(t)^2}$, then the confidence interval is estimated as $\exp(\log(\hat{\Lambda}(t)) \pm z_{0.975}\sqrt{\hat{V}(\log(\hat{\Lambda}(t)))}$.
+
 ```{r}
 
 
-# Computing 95% confidence interval for the cumulative hazard assuming log(lambda(t)) follows normal distribution
+# Computing 95% confidence interval for the cumulative hazard assuming 
+# log(lambda(t)) follows normal distribution
 
 # Computing using delta mathod
 
@@ -140,15 +157,9 @@ ggplot(result_1_c, aes(x = x)) +
 
 ## Question 1(d)
 
-$S(t)=exp(-\Lambda(t)) $
-
-$\hat{V}(\hat{S}(t))=exp(-2\hat{\Lambda}(t))\hat{V}(\hat{\Lambda}(t)) $
-
+Assuming the $log(\Lambda (t))$ follows normal distribution.  The variance of $log(\Lambda (t))$ is estimated as above. As $S(t)=exp(-\Lambda(t))$, thus $P\{ \hat{\Lambda}(t) \in (a,b) \} = P\{ \hat{S}(t) \in (e^{-b},e^{-a}) \}=0.95$ And the CI are computed as follow:
 
 ```{r}
-
-#Estimate S(t) using the Nelson-Aalen procedure, then compute 95% confidence intervals 
-#for and assuming that log{ ̂ Λ(t)} follows a Normal  
 
 V_estimate_temp = (data_sorted$delta*(data_sorted$y-data_sorted$delta)/(data_sorted$y^3)) %>% cumsum()
 
@@ -188,7 +199,6 @@ print("quartiles of 0.25,0.5 of survival estimations are")
 
 c(min(result_1_d$x[which(result_1_d$S_estimate <= (1-0.25))]),
 min(result_1_d$x[which(result_1_d$S_estimate <= 0.5)]))
-#min(result_1_d$x[which(result_1_d$S_estimate <= 0.25)]))
 
 ```
 
