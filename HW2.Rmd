@@ -42,7 +42,7 @@ data %>% psych::describe()
 
 ## Question 1(a)
 
-$\hat{\Lambda}_{NA}(t)=\sum_{t_j < t} \frac{D_j}{Y_j}$
+$\hat{\Lambda}_{NA}(t)=\sum_{t_j \le t} \frac{D_j}{Y_j}$
 
 where $D_j$ is the number of events at time $t_j$ and 
 $Y_j$ is the number of individuals at risk at time $t_j$.
@@ -83,7 +83,7 @@ data2
 
 ## Question 1(b)
 
-Assuming the $\hat{\Lambda} (t)$ follows normal distribution, and the variance of $\hat{\Lambda}(t)$ is estimated using Greenwood's formula as $\hat{V}(t)=\sum_{t_j<t}\frac{D_j}{Y_j^2}$, then the confidence interval is estimated as $\hat{\Lambda}(t) \pm z_{0.975}\sqrt{\hat{V}(t)}$.
+Assuming the $\hat{\Lambda} (t)$ follows normal distribution, and the variance of $\hat{\Lambda}(t)$ is estimated as $\hat{V}(t)=\sum_{t_j \le t}\frac{D_j}{Y_j^2}$, then the confidence interval is estimated as $\hat{\Lambda}(t) \pm z_{0.975}\sqrt{\hat{V}(t)}$.
 
 
 
@@ -119,7 +119,7 @@ ggplot(result_1_b, aes(x = x)) +
 
 ## Question 1(c)
 
-Assuming the $\hat{\Lambda} (t)$ follows normal distribution.  The variance of $\hat{\Lambda (t)}$ , using Delta method is estimated as $\hat{V}(\log(\hat{\Lambda} (t)) = \sum_{t_j<t}\frac{D_j}{Y_j^2 \hat{\Lambda}(t)^2}$, then the confidence interval is estimated as $\exp(\log(\hat{\Lambda}(t)) \pm z_{0.975}\sqrt{\hat{V}(\log(\hat{\Lambda}(t)))}$.
+Assuming the $\hat{\Lambda} (t)$ follows normal distribution.  The variance of $\hat{\Lambda (t)}$ , using Delta method is estimated as $\hat{V}(\log(\hat{\Lambda} (t)) = \sum_{t_j \le t}\frac{D_j}{Y_j^2 \hat{\Lambda}(t)^2}$, then the confidence interval is estimated as $\exp(\log(\hat{\Lambda}(t) \pm z_{0.975}\sqrt{\hat{V}(\log(\hat{\Lambda}(t)))})$.
 
 ```{r}
 
@@ -192,6 +192,8 @@ ggplot(result_1_d, aes(x = x)) +
 ```
 
 ## Question 1(e)
+
+Quartile of 0.75 is unable to compute due to the estimation of survival function ends in 0.358. However, the quartiles of 0.25 and 0.5 are computed as follow:
 
 ```{r}
 
